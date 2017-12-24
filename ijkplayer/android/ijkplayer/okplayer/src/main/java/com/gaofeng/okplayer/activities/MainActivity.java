@@ -26,6 +26,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -53,8 +54,11 @@ import yalantis.com.sidemenu.interfaces.ScreenShotable;
 import yalantis.com.sidemenu.model.SlideMenuItem;
 import yalantis.com.sidemenu.util.ViewAnimator;
 
+import static com.gaofeng.okplayer.fragments.PlayFragment.mVideoPlayerControler;
+
 
 public class MainActivity extends AppActivity implements ViewAnimator.ViewAnimatorListener {
+    private static final String TAG = MainActivity.class.getSimpleName();
     private Settings mSettings;
     private static boolean mIsFullScreen = false;
     private static boolean mIsPlay = false;
@@ -145,9 +149,6 @@ public class MainActivity extends AppActivity implements ViewAnimator.ViewAnimat
         findViewById(R.id.content_overlay).setBackgroundDrawable(new BitmapDrawable(getResources(),
                 screenShotable.getBitmap()));
         animator.start();*/
-
-
-
 
         return screenShotable;
     }
@@ -367,4 +368,31 @@ public class MainActivity extends AppActivity implements ViewAnimator.ViewAnimat
 
     }
 
+    long firstBackTime = 0;
+    @Override
+    public void onBackPressed() {
+        if(firstBackTime == 0){
+            firstBackTime = System.currentTimeMillis();
+            Toast.makeText(this, getResources().getString(R.string.txt_back), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        long time = System.currentTimeMillis() - firstBackTime;
+        if(time < 3000){
+            firstBackTime = 0;
+            finish();
+        }else{
+            firstBackTime = System.currentTimeMillis();
+            Toast.makeText(this, getResources().getString(R.string.txt_back), Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        if(mVideoPlayerControler != null){
+            mVideoPlayerControler.stop();
+            mVideoPlayerControler.release();
+        }
+        super.onDestroy();
+    }
 }

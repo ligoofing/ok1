@@ -79,5 +79,6 @@
     <string name="drawer_close">drawer_close</string>
     <string name="txt_size">大小:</string>
     <string name="txt_resolution">分辨率:</string>
+    <string name="txt_back">再按一次退出</string>
 
 </resources>

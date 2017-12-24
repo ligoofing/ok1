@@ -45,14 +45,15 @@
 
     </LinearLayout>
 
-    <com.gaofeng.okplayer.widget.SelectableRoundedImageView
-        xmlns:app="http://schemas.android.com/apk/res-auto"
+    <CheckBox
         android:id="@+id/btn_item_click"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-        android:background="@mipmap/play_video"
+        android:background="@drawable/play_selector"
+        android:checked="false"
+        android:button="@null"
         />
 
 </RelativeLayout>

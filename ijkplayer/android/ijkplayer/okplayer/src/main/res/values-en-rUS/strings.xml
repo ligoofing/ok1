@@ -79,5 +79,6 @@
     <string name="drawer_close">drawer_close</string>
     <string name="txt_size">Size:</string>
     <string name="txt_resolution">Resolution:</string>
+    <string name="txt_back">Please Click again</string>
 
 </resources>

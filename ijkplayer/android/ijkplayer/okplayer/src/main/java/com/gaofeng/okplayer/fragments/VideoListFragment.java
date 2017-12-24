@@ -9,15 +9,12 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.media.Image;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.text.TextUtils;
 import android.util.Log;
@@ -27,28 +24,24 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.ImageButton;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
+import com.gaofeng.okplayer.Controler.VideoPlayerControler;
 import com.gaofeng.okplayer.R;
 import com.gaofeng.okplayer.Source.OkMediaProvider;
 import com.gaofeng.okplayer.Utils;
 import com.gaofeng.okplayer.eventbus.FileExplorerEvents;
-import com.gaofeng.okplayer.widget.SelectableRoundedImageView;
 import com.yydcdut.sdlv.Menu;
 import com.yydcdut.sdlv.MenuItem;
 import com.yydcdut.sdlv.SlideAndDragListView;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import yalantis.com.sidemenu.interfaces.ScreenShotable;
 
@@ -56,7 +49,7 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
         AdapterView.OnItemClickListener, AbsListView.OnScrollListener,
         SlideAndDragListView.OnDragDropListener, SlideAndDragListView.OnSlideListener,
         SlideAndDragListView.OnMenuItemClickListener, SlideAndDragListView.OnItemDeleteListener,
-        SlideAndDragListView.OnItemScrollBackListener, LoaderManager.LoaderCallbacks<Cursor>,ScreenShotable {
+        SlideAndDragListView.OnItemScrollBackListener,LoaderManager.LoaderCallbacks<Cursor>,ScreenShotable {
     private static final String TAG = VideoListFragment.class.getSimpleName();
     private View containerView;
     private Bitmap bitmap;
@@ -98,13 +91,6 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
 
     public void initData() {
          mediaList = mMediaProvider.getMedia();
-
-        for (int i = 0; i < mediaList.size(); i++){
-            Log.i(TAG,"path:" + mediaList.get(i).get(MediaStore.Video.Media.DATA));
-            Log.i(TAG,"name:" + mediaList.get(i).get(MediaStore.Video.Media.DISPLAY_NAME));
-            Log.i(TAG,"size:" + mediaList.get(i).get(MediaStore.Video.Media.SIZE));
-            Log.i(TAG,"resolution:" + mediaList.get(i).get(MediaStore.Video.Media.RESOLUTION));
-        }
 
 //        mAppList = getActivity().getPackageManager().getInstalledApplications(0);
     }
@@ -177,8 +163,8 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
                 cvh.txtName = (TextView) convertView.findViewById(R.id.txt_item_name);
                 cvh.txtSize = (TextView) convertView.findViewById(R.id.txt_item_size);
                 cvh.txtResolution = (TextView) convertView.findViewById(R.id.txt_item_resolution);
-                cvh.btnClick = (SelectableRoundedImageView) convertView.findViewById(R.id.btn_item_click);
-                cvh.btnClick.setOnClickListener(mOnClickListener);
+                cvh.btnClick = (CheckBox) convertView.findViewById(R.id.btn_item_click);
+                cvh.btnClick.setOnCheckedChangeListener(mCheckChange);
                 convertView.setTag(cvh);
             } else {
                 cvh = (CustomViewHolder) convertView.getTag();
@@ -190,9 +176,6 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
             cvh.txtResolution.setText(getResources().getString(R.string.txt_resolution)
                     + item.get(MediaStore.Video.Media.RESOLUTION));
             cvh.txtName.setText(item.get(MediaStore.Video.Media.DISPLAY_NAME));
-
-            cvh.btnClick.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            cvh.btnClick.setOval(true);
 
             Glide.with(getActivity()).
                     load(item.get(MediaStore.Video.Media.DATA)).
@@ -206,6 +189,7 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
                     thumbnail(0.1f).//10%的原图大小
                     into(cvh.imgLogo);
 
+            cvh.btnClick.setChecked(false);
             cvh.btnClick.setTag(position);
             return convertView;
         }
@@ -215,23 +199,28 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
             public TextView txtName;
             public TextView txtSize;
             public TextView txtResolution;
-            public SelectableRoundedImageView btnClick;
+            public CheckBox btnClick;
         }
 
-        private View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        private CompoundButton.OnCheckedChangeListener mCheckChange = new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                Object o = v.getTag();
-                if (o instanceof Integer) {
-                    mToast.setText("button click-->" + ((Integer) o));
-                    mToast.show();
-
-                    v.setBackgroundResource(R.mipmap.pause);
-
-                    String path = mediaList.get((Integer) o).get(MediaStore.Video.Media.DATA);
-                    if (TextUtils.isEmpty(path))
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                Object o = compoundButton.getTag();
+                String newPath = mediaList.get((Integer) o).get(MediaStore.Video.Media.DATA);
+                String currentPlay = VideoPlayerControler.getInstance().getCurrentSource();
+                if(currentPlay == null || !currentPlay.equals(newPath)){
+                    if (TextUtils.isEmpty(newPath))
                         return;
-                    FileExplorerEvents.getBus().post(new FileExplorerEvents.OnClickFile(path));
+                    FileExplorerEvents.getBus().post(new FileExplorerEvents.OnClickFile(newPath));
+                    mAdapter.notifyDataSetChanged();
+                    compoundButton.setChecked(true);
+                    return;
+                }
+
+                if(b){//checked
+                    VideoPlayerControler.getInstance().start();
+                }else{
+                    VideoPlayerControler.getInstance().pause();
                 }
             }
         };
@@ -365,6 +354,8 @@ public class VideoListFragment extends Fragment implements AdapterView.OnItemLon
     public void onScrollBackAnimationFinished(View view, int position) {
         Log.d("yuyidong", "onScrollBackAnimationFinished");
     }
+
+
 
     private void toast(String toast) {
         mToast.setText(toast);

@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import com.gaofeng.okplayer.Controler.VideoPlayerControler;
 import com.gaofeng.okplayer.R;
 import com.gaofeng.okplayer.common.PlayInterface;
 import com.gaofeng.okplayer.widget.media.AndroidMediaController;
@@ -23,7 +24,7 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
  * Use the {@link PlayFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class PlayFragment extends Fragment implements PlayInterface{
+public class PlayFragment extends Fragment{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String TAG = "PlayFrament";
@@ -40,6 +41,7 @@ public class PlayFragment extends Fragment implements PlayInterface{
     private TableLayout mHudView;
     private DrawerLayout mDrawerLayout;
     private ViewGroup mRightDrawer;
+    public static VideoPlayerControler mVideoPlayerControler;
 
     public PlayFragment() {
         // Required empty public constructor
@@ -68,6 +70,7 @@ public class PlayFragment extends Fragment implements PlayInterface{
         if (getArguments() != null) {
             mVideoPath = getArguments().getString(ARG_PARAM1);
         }
+        mVideoPlayerControler = VideoPlayerControler.getInstance();
     }
 
     @Override
@@ -94,34 +97,33 @@ public class PlayFragment extends Fragment implements PlayInterface{
         IjkMediaPlayer.native_profileBegin("libijkplayer.so");
 
         mVideoView = (IjkVideoView) v.findViewById(R.id.video_view);
-
+        mVideoPlayerControler.setVideoView(mVideoView, mMediaController, mHudView);
         play(mVideoPath);
-//        mVideoView.setMediaController(mMediaController);
-//        mVideoView.setHudView(mHudView);
-//        // prefer mVideoPath
-//        if (mVideoPath != null)
-//            mVideoView.setVideoPath(mVideoPath);
-//        else {
-//            Log.e(TAG, "Null Data Source\n");
-//            return;
-//        }
-//        mVideoView.start();
     }
 
-
-    @Override
     public void play(String path) {
         if(mVideoView == null || mMediaController == null)return;
 
-        mVideoView.setMediaController(mMediaController);
-        mVideoView.setHudView(mHudView);
-        // prefer mVideoPath
-        if (path != null)
-            mVideoView.setVideoPath(path);
-        else {
-            Log.e(TAG, "Null Data Source\n");
-            return;
+        try {
+            mVideoPlayerControler.play(path);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        mVideoView.start();
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+    }
+
 }
